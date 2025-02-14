@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,123,255,0.1);
+        }
+        .btn-inline {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-person-plus me-2"></i>Add Student
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="studentForm">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" name="name" class="form-control" id="name">
+                                <div class="error-message" id="nameError">Please enter a valid name</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" id="email">
+                                <div class="error-message" id="emailError">Please enter a valid email address</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="age" class="form-label">Age</label>
+                                <input type="number" name="age" class="form-control" id="age">
+                                <div class="error-message" id="ageError">Please enter a valid age</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="major" class="form-label">Major</label>
+                                <select class="form-select" name="major" id="major">
+                                    <option value="">Select Major</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Arts">Arts</option>
+                                </select>
+                                <div class="error-message" id="majorError">Please select a major</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-save me-2"></i>Save Student
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Rest of the code remains the same until the edit modal -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people me-2"></i>Student List
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <%if(students.length>=1){%>
+                                <table class="table table-hover" id="studentTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Age</th>
+                                            <th>Major</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentTableBody">
+                                        <% students.forEach((student, index) => { %>
+                                            <tr>
+
+                                                <td><%= startIndex + index + 1 %></td>
+                                                <td><%= student.name %></td>
+                                                <td><%= student.email %></td>
+                                                <td><%= student.age %></td>
+                                                <td><%= student.major %></td>
+                                                <td>
+                                                    <% if (student.status === 'Active') { %>
+                                                        <span class="badge bg-success" style="display: inline-block;">Active</span>
+                                                    <% } else if (student.status === 'Blocked') { %>
+                                                        <span class="badge bg-danger" style="display: inline-block;">Blocked</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <button class="btn <%= student.status === 'Active' ? 'btn-warning' : 'btn-success' %> btn-inline toggle-btn" data-id="<%= student._id %>" data-st="<%=student.status%>" data-name="<%=student.name%>" style="display: inline-block;">
+                                                        <%= student.status === 'Active' ? 'Block' : 'Unblock' %>
+                                                    </button>                                                                                                        
+                                                    <button class="btn btn-danger btn-inline delete-btn" data-id="<%=student._id%>" data-name="<%=student.name%>"  style="display: inline-block;">Delete</button>
+                                                    <button class="btn btn-primary btn-inline edit-btn" style="display: inline-block;" data-bs-toggle="modal" data-bs-target="#editStudentModal" data-id="<%= student._id %>" data-name="<%= student.name %>" data-email="<%= student.email %>" data-age="<%= student.age %>" data-major="<%= student.major %>">Edit</button>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            <%}else{%>
+                                No Students Found!
+                            <%}%>
+                            <nav aria-label="Page navigation example" style="float: right;">
+                                <ul class="pagination">
+                                    <% if (currentPage > 1) { %>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<%= currentPage - 1 %>">Previous</a>
+                                        </li>
+                                    <% } %>
+                            
+                                    <% if (totalPages <= 4) { %>
+                                        <% for (let i = 1; i <= totalPages; i++) { %>
+                                            <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                                                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                                            </li>
+                                        <% } %>
+                                    <% } else { %>
+                                        <li class="page-item <%= (1 === currentPage) ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=1">1</a>
+                                        </li>
+                                        <li class="page-item <%= (2 === currentPage) ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=2">2</a>
+                                        </li>
+                            
+                                        <% if (currentPage > 3) { %>
+                                            <li class="page-item">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        <% } %>
+                            
+                                        <% if (currentPage > 2 && currentPage < totalPages - 1) { %>
+                                            <li class="page-item active">
+                                                <a class="page-link" href="?page=<%= currentPage %>"><%= currentPage %></a>
+                                            </li>
+                                        <% } %>
+                            
+                                        <% if (currentPage < totalPages - 2) { %>
+                                            <li class="page-item">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        <% } %>
+                            
+                                        <li class="page-item <%= (totalPages - 1 === currentPage) ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=<%= totalPages - 1 %>"><%= totalPages - 1 %></a>
+                                        </li>
+                                        <li class="page-item <%= (totalPages === currentPage) ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=<%= totalPages %>"><%= totalPages %></a>
+                                        </li>
+                                    <% } %>
+                            
+                                    <% if (currentPage < totalPages) { %>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<%= currentPage + 1 %>">Next</a>
+                                        </li>
+                                    <% } %>
+                                </ul>
+                            </nav>                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal with similar validation structure -->
+    <div class="modal fade" id="editStudentModal" tabindex="-1" role="dialog" aria-labelledby="editStudentModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editStudentModalLabel">Edit Student</h5>
+                    <button type="button" onclick="window.location.reload()" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editStudentForm">
+                        <input type="hidden" id="editStudentId">
+                        <div class="mb-3">
+                            <label for="editName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="editName" aria-describedby="editNameError">
+                            <div class="error-message" id="editNameError" role="alert">Please enter a valid name</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editEmail" aria-describedby="editEmailError">
+                            <div class="error-message" id="editEmailError" role="alert">Please enter a valid email address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAge" class="form-label">Age</label>
+                            <input type="number" class="form-control" id="editAge" aria-describedby="editAgeError">
+                            <div class="error-message" id="editAgeError" role="alert">Please enter a valid age</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMajor" class="form-label">Major</label>
+                            <select class="form-select" id="editMajor" aria-describedby="editMajorError">
+                                <option value="">Select Major</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="Business">Business</option>
+                                <option value="Arts">Arts</option>
+                            </select>
+                            <div class="error-message" id="editMajorError" role="alert">Please select a major</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2" aria-hidden="true"></i>Update Student
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+        // Function to validate form fields
+        function validateField(input, errorElement) {
+            const value = input.value.trim();
+            let isValid = true;
+
+            // Remove existing validation classes
+            input.classList.remove('is-invalid');
+            errorElement.style.display = 'none';
+
+            // Check if empty
+            if (value === '') {
+                input.classList.add('is-invalid');
+                errorElement.style.display = 'block';
+                isValid = false;
+            }
+
+            // Additional validation for email
+            if (input.type === 'email' && value !== '') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) {
+                    input.classList.add('is-invalid');
+                    errorElement.style.display = 'block';
+                    errorElement.textContent = 'Please enter a valid email address';
+                    isValid = false;
+                }
+            }
+
+            // Additional validation for age
+            if (input.type === 'number' && value !== '') {
+                const age = parseInt(value);
+                if (isNaN(age) || age < 1 || age > 120) {
+                    input.classList.add('is-invalid');
+                    errorElement.style.display = 'block';
+                    errorElement.textContent = 'Please enter a valid age between 1 and 120';
+                    isValid = false;
+                }
+            }
+
+            return isValid;
+        }
+
+        // Add Student Form Validation
+        document.getElementById('studentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            // Validate each field
+            isValid = validateField(document.getElementById('name'), document.getElementById('nameError')) && isValid;
+            isValid = validateField(document.getElementById('email'), document.getElementById('emailError')) && isValid;
+            isValid = validateField(document.getElementById('age'), document.getElementById('ageError')) && isValid;
+            isValid = validateField(document.getElementById('major'), document.getElementById('majorError')) && isValid;
+
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const email = document.getElementById('email').value;
+            const major = document.getElementById('major').value;
+            console.log(name);
+            
+            if (isValid) {
+                try {
+                    const response = await axios.post('/add', {
+                        name,
+                        age,
+                        email,
+                        major
+                    });
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Student Added',
+                        text: `Student ${response.data.name} has been added successfully!`
+                    })
+                    // Optionally, update the UI with the new student data
+                    this.reset();
+                    // Clear any remaining error states
+                    document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                    setTimeout(() => {
+                        window.location.reload()
+                    }, 2000);
+
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `${error.response ? error.response.data.error : error.message}`
+                    });
+                }
+            }
+        });
+
+
+        // Edit Student Form Validation
+        document.getElementById('editStudentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            // Validate each field
+            isValid = validateField(document.getElementById('editName'), document.getElementById('editNameError')) && isValid;
+            isValid = validateField(document.getElementById('editEmail'), document.getElementById('editEmailError')) && isValid;
+            isValid = validateField(document.getElementById('editAge'), document.getElementById('editAgeError')) && isValid;
+            isValid = validateField(document.getElementById('editMajor'), document.getElementById('editMajorError')) && isValid;
+
+            if (isValid) {
+                try {
+                    const id = document.getElementById('editStudentId').value;
+                    const name = document.getElementById('editName').value;
+                    const email = document.getElementById('editEmail').value;
+                    const age = document.getElementById('editAge').value;
+                    const major = document.getElementById('editMajor').value;
+
+                    const response = await axios.put(`/edit/${id}`, {
+                        name,
+                        email,
+                        age,
+                        major
+                    });
+
+                    // Hide modal using Bootstrap 5 method
+                    const modalElement = document.getElementById('editStudentModal');
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.hide();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Student Updated',
+                        text: `Student ${response.data.name} has been updated successfully!`
+                    });
+
+                    // Clear any remaining error states
+                    document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `Error updating student: ${error.response ? error.response.data.message : error.message}`
+                    });
+                }
+            }
+        });
+
+        const editModal = document.getElementById('editStudentModal');
+        const modalForm = document.getElementById('editStudentForm');
+        const firstInput = document.getElementById('editName');
+        const closeButton = editModal.querySelector('.btn-close');
+
+        editModal.addEventListener('shown.bs.modal', function () {
+            // Set focus to first input when modal opens
+            firstInput.focus();
+        });
+
+        // Handle modal focus trap
+        editModal.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                const focusableElements = editModal.querySelectorAll(
+                    'button:not([disabled]), input:not([disabled]), select:not([disabled])'
+                );
+                const firstFocusable = focusableElements[0];
+                const lastFocusable = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstFocusable) {
+                        lastFocusable.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastFocusable) {
+                        firstFocusable.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+
+        // Update the edit button click handler
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const email = this.getAttribute('data-email');
+                const age = this.getAttribute('data-age');
+                const major = this.getAttribute('data-major');
+
+                // Store the button that opened the modal
+                const triggerButton = this;
+
+                // Set values in the edit form
+                document.getElementById('editStudentId').value = id;
+                document.getElementById('editName').value = name;
+                document.getElementById('editEmail').value = email;
+                document.getElementById('editAge').value = age;
+                document.getElementById('editMajor').value = major;
+
+                // Show modal using Bootstrap 5 method
+                const modal = new bootstrap.Modal(editModal);
+                modal.show();
+
+                // Return focus to trigger button when modal closes
+                editModal.addEventListener('hidden.bs.modal', function onModalHidden() {
+                    triggerButton.focus();
+                    editModal.removeEventListener('hidden.bs.modal', onModalHidden);
+                });
+            });
+        });
+
+
+        // Delete Student
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', async function () {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name'); 
+                try {
+                    const response = await axios.delete(`/delete/${id}`);
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        icon: 'success',
+                        title: `Student ${name} has been deleted successfully!`
+                    });
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        icon: 'error',
+                        title: `Error deleting student: ${error.response ? error.response.data.message : error.message}`
+                    });
+                }
+            });
+        });
+
+        // Toggle Student
+        document.querySelectorAll('.toggle-btn').forEach(button => {
+            button.addEventListener('click', async function () {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name'); 
+                const status = this.getAttribute('data-st');
+                const newStatus = status == 'Active' ? 'Blocked' : 'Unblocked'
+                try {
+                    const response = await axios.patch(`/toggle/${id}`);
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        icon: 'success',
+                        title: `Student ${name} has been ${newStatus} successfully!`
+                    });
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        icon: 'error',
+                        title: `Error Updating student: ${error.response ? error.response.data.message : error.message}`
+                    });
+                }
+            });
+        });
+
+
+    </script>
+   
+</body>
+</html>
