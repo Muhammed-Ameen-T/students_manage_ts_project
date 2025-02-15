@@ -1,11 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface IStudent extends Document {
+export interface IStudent extends Document {
   name: string;
   age: number;
   email: string;
-  status: string;
-  grade: string;
+  status: 'Active' | 'Blocked';
+  major: string;
 }
 
 const StudentSchema: Schema = new Schema({
@@ -19,11 +19,13 @@ const StudentSchema: Schema = new Schema({
   },
   email: {
     type: String, 
-    required: true 
+    required: true,
+    unique:true
   },
   status:{
     type: String,
     required:true,
+    enum:['Active','Blocked'],
     default:'Active',
   },
   major: {
